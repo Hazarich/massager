@@ -165,29 +165,29 @@
     <button id="buttonToSignIn">SignIN</button>
 </div>
 <div id="signIn">
-    <h1 style="text-align: center" >Привет, введи своё имя и пароль</h1>
+    <h1 style="text-align: center" >Привіт введи свій логін та пароль</h1>
     <label for="signInInpOfName"></label><input placeholder="Ім'я" maxlength="10" id="signInInpOfName">
     <label for="signInPassword"></label><input placeholder="Пароль" maxlength="20" type="password" style="text-blink: password" id="signInPassword">
-    <button id="signInButtonForChats">Перейти к чатам</button>
-    <p id="signInChelEblan" style="color: red; display: none">Вы еблан, впишите пароль или логин в точности с тем, что вводили в регистрации, долбоёб...</p>
+    <button id="signInButtonForChats">Перейти до чатів</button>
+    <p id="signInChelEblan" style="color: red; display: none">Ви дебіл, впишіть логін та пароль так, як ви писали його при реєстрації...</p>
 </div>
 
 <div id="register">
-    <h1 style="text-align: center" >Привет, введи своё имя и пароль</h1>
+    <h1 style="text-align: center" >Привіт, введіть своє ім'я</h1>
     <label for="registerInpOfName"></label><input placeholder="Ім'я" maxlength="10" id="registerInpOfName">
     <label for="registerPassword"></label><input placeholder="Пароль" maxlength="20" type="password" style="text-blink: password" id="registerPassword">
-    <button id="registerButtonForChats">Перейти к чатам</button>
-    <p id="registerChelEblan" style="color: red; display: none">Вы еблан? Вы уже зарегестрированы</p>
+    <button id="registerButtonForChats">Перейти до чатів</button>
+    <p id="registerChelEblan" style="color: red; display: none">Ви дебіл? Ви вже зареєстровані</p>
 
 </div>
 
 <div id="chatContainer">
     <div id="messages"></div>
-    <label for="messageInput"></label><input type="text" id="messageInput" placeholder="Введите сообщение">
-    <button id="sendButton">Отправить</button>
+    <label for="messageInput"></label><input type="text" id="messageInput" placeholder="Введіть повідомлення">
+    <button id="sendButton">Відправити</button>
 </div>
 <div class="groupOfChats">
-    <h1 style="text-align: center">Выбери чат</h1>
+    <h1 style="text-align: center">Обери чат</h1>
     <button id="room1">chat 1</button>
     <button id="room2">chat 2</button>
     <button id="room3">chat 3</button>
@@ -210,6 +210,7 @@
     const viborBetweenVhodami = document.getElementById(`viborBetweenVhodami`)
     const buttonToRegister = document.getElementById(`buttonToRegister`)
     const buttonToSignIn = document.getElementById(`buttonToSignIn`)
+    const chelDebil = document.getElementById(`signInChelEblan`)
 
     buttonToRegister.addEventListener('click', () => {
         viborBetweenVhodami.style.display = 'none';
@@ -219,7 +220,6 @@
         viborBetweenVhodami.style.display = 'none';
         viborImeni.style.display = 'block';
     })
-
 
     registerButtonForChats.addEventListener('click', () => {
         let name = document.getElementById('registerInpOfName').value.trim();
@@ -245,18 +245,17 @@
     bottonForNAmeandPassword.addEventListener(`click`,()=>{
         let name = inputName.value.trim();
         let password = userPassword.value.trim();
-        let tottext = document.getElementById(`signInChelEblan`)
         socket.emit(`signIn`, {name:name, password:password})
         socket.on(`signInOn`, data=>{
-            if(data===`error`){
-                tottext.style.display = `block`
+            if(data ===`error`){
+                chelDebil.style.display = `block`
             }
             else if(data === `OK`){
                 viborImeni.style.display = `none`;
                 vibor.style.display = `block`
             }
             else {
-                tottext.style.display = `block`
+                chelDebil.style.display = `block`
             }
         })
 

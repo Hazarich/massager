@@ -22,12 +22,12 @@ async function connectToDatabase() {
     try {
         // Подключаемся к серверу MongoDB
         await client.connect();
-        console.log("Подключение к базе данных успешно!");
+        console.log("Підключена база успішно!");
 
         // Выбираем базу данных
         const db = client.db(dbName);
         const users = await db.collection("users");
-        console.log(`Используем базу данных: ${dbName}`);
+        console.log(`база даних: ${dbName}`);
         //////////////////////////////////////////////////////////
         app.use(express.static('public'));
 
@@ -40,7 +40,7 @@ async function connectToDatabase() {
             socket.on('register', async ({ name, password }) => {
                 socket.username = name;
                 socket.password = password;
-                console.log(`Зашёл пользователь с ником ${socket.username} и паролем ${socket.password}`);
+                console.log(`Зайшов чел з ніком ${socket.username} і паролем ${socket.password}`);
 
                 const existingUser = await users.findOne({ login: password });
                 if (existingUser) {
@@ -65,7 +65,7 @@ async function connectToDatabase() {
                         socket.emit('signInOn', "error");
                     }
                 } catch (err) {
-                    console.error("Ошибка при проверке пользователя:", err);
+                    console.error("помилка при перевірці:", err);
                     socket.emit('signInOn', "error"); // Ошибка валидации
                 }
             });
@@ -73,7 +73,7 @@ async function connectToDatabase() {
             socket.on('join', (room) => {
                 socket.join(room);
 
-                console.log(`Пользователь ${socket.username} присоединился к комнате ${room}`);
+                console.log(`користувач ${socket.username} приєднався до кімнати ${room}`);
             });
 
             socket.on('message', ({ room, text,  }) => {
@@ -82,19 +82,19 @@ async function connectToDatabase() {
                     i++
                 }
                 socket.data.color = userColors[socket.id];
-                console.log(`Сообщение из ${room} от ${socket.username}: ${text}`);
+                console.log(`Повідомлення з ${room} від ${socket.username}: ${text}`);
                 io.in(room).emit('message', {data:`${socket.username}: ${text}`, color: socket.data.color});
             });
 
 
             socket.on('disconnect', () => {
-                console.log(`${socket.username} отключился`);
+                console.log(`${socket.username} відключився`);
                 delete userColors[socket.id];
             });
         })
 
         server.listen(`3000`, ()=>{
-            console.log("сервер запущен на порте 3000")
+            console.log("сервер запустився на порті 3000")
         })
 
 
@@ -102,7 +102,7 @@ async function connectToDatabase() {
 
         // Здесь можно начать работать с коллекциями и документами
     } catch (err) {
-        console.error("Ошибка подключения:", err);
+        console.error("помилка підключення:", err);
     }
 }
 
