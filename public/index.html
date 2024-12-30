@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        #chatContainer{
+            display: none;
+                background-color: #fff;
+                border-radius: 8px;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                padding: 20px;
+                width: 90%;
+                max-width: 400px;
+                margin: auto;
+                text-align: center;
+                    flex-direction: column;
+                    height: 80%;
+                    max-height: 500px;
+        }
+        .groupOfChats{
+            display: none;
+                justify-content: center;
+                gap: 10px;
+                flex-wrap: wrap;
+        }
+        #register{
+            display: none;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            width: 90%;
+            max-width: 400px;
+            margin: auto;
+            text-align: center;
+        }
+        #signIn{
+            display: none;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            width: 90%;
+            max-width: 400px;
+            margin: auto;
+            text-align: center;
+        }
+         body {
+             font-family: Arial, sans-serif;
+             margin: 0;
+             padding: 0;
+             background-color: #f4f4f4;
+             color: #333;
+             display: flex;
+             justify-content: center;
+             align-items: center;
+             height: 100vh;
+         }
+
+
+
+        #signIn h1 {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            color: #555;
+        }
+
+        input {
+            width: 90%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1em;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #888;
+        }
+
+        button {
+            padding: 10px 15px;
+            font-size: 1em;
+            background-color: #4CAF50;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        #signInChelEblan {
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+
+        .groupOfChats button {
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.9em;
+            cursor: pointer;
+        }
+
+        .groupOfChats button:hover {
+            background-color: #0056b3;
+        }
+
+
+
+        #messages {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        #messages div {
+            margin-bottom: 10px;
+            padding: 8px;
+            background-color: #d4edda;
+            border-radius: 6px;
+            max-width: 70%;
+            text-align: left;
+        }
+
+/*        #messages div:nth-child(odd) {
+            background-color: #d4edda;
+        }*/
+
+        #messageInput {
+            flex: 0;
+            width: calc(100% - 20px);
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 500px) {
+            button, input {
+                font-size: 0.9em;
+                padding: 8px;
+            }
+
+            #messages div {
+                font-size: 0.9em;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div id="viborBetweenVhodami">
+    <h1>Выбирай</h1>
+    <button id="buttonToRegister">Register</button>
+    <button id="buttonToSignIn">SignIN</button>
+</div>
+<div id="signIn">
+    <h1 style="text-align: center" >Привет, введи своё имя и пароль</h1>
+    <label for="signInInpOfName"></label><input placeholder="Ім'я" maxlength="10" id="signInInpOfName">
+    <label for="signInPassword"></label><input placeholder="Пароль" maxlength="20" type="password" style="text-blink: password" id="signInPassword">
+    <button id="signInButtonForChats">Перейти к чатам</button>
+    <p id="signInChelEblan" style="color: red; display: none">Вы еблан, впишите пароль или логин в точности с тем, что вводили в регистрации, долбоёб...</p>
+</div>
+
+<div id="register">
+    <h1 style="text-align: center" >Привет, введи своё имя и пароль</h1>
+    <label for="registerInpOfName"></label><input placeholder="Ім'я" maxlength="10" id="registerInpOfName">
+    <label for="registerPassword"></label><input placeholder="Пароль" maxlength="20" type="password" style="text-blink: password" id="registerPassword">
+    <button id="registerButtonForChats">Перейти к чатам</button>
+    <p id="registerChelEblan" style="color: red; display: none">Вы еблан? Вы уже зарегестрированы</p>
+
+</div>
+
+<div id="chatContainer">
+    <div id="messages"></div>
+    <label for="messageInput"></label><input type="text" id="messageInput" placeholder="Введите сообщение">
+    <button id="sendButton">Отправить</button>
+</div>
+<div class="groupOfChats">
+    <h1 style="text-align: center">Выбери чат</h1>
+    <button id="room1">chat 1</button>
+    <button id="room2">chat 2</button>
+    <button id="room3">chat 3</button>
+</div>
+<script>
+    const socket = io();
+    let currentRoom = ''
+    const vibor = document.querySelector('.groupOfChats');
+    const chat = document.getElementById('chatContainer');
+    const messagesContainer = document.getElementById('messages');
+    const inp = document.getElementById('messageInput');
+    const but = document.getElementById('sendButton');
+    const bottonForNAmeandPassword = document.getElementById(`signInButtonForChats`);
+    const inputName = document.getElementById(`signInInpOfName`)
+    const userPassword = document.getElementById(`signInPassword`)
+    const viborImeni = document.getElementById(`signIn`)
+    const registerButtonForChats = document.getElementById(`registerButtonForChats`)
+    const registerChelEblan = document.getElementById(`registerChelEblan`)
+    const register = document.getElementById(`register`)
+    const viborBetweenVhodami = document.getElementById(`viborBetweenVhodami`)
+    const buttonToRegister = document.getElementById(`buttonToRegister`)
+    const buttonToSignIn = document.getElementById(`buttonToSignIn`)
+
+    buttonToRegister.addEventListener('click', () => {
+        viborBetweenVhodami.style.display = 'none';
+        register.style.display = 'block';
+    })
+    buttonToSignIn.addEventListener('click', () => {
+        viborBetweenVhodami.style.display = 'none';
+        viborImeni.style.display = 'block';
+    })
+
+
+    registerButtonForChats.addEventListener('click', () => {
+        let name = document.getElementById('registerInpOfName').value.trim();
+        let password = document.getElementById('registerPassword').value.trim();
+        if(name && password){
+            socket.emit(`register`, {name:name, password:password})
+}
+        else {
+            registerChelEblan.style.display = `block`
+        }
+        socket.on(`registerOn`, data=>{
+            if(data === `OK`){
+                 register.style.display = `none`;
+                 vibor.style.display = `block`
+            }
+            else{
+                registerChelEblan.style.display = `block`;
+            }
+        })
+
+    })
+
+    bottonForNAmeandPassword.addEventListener(`click`,()=>{
+        let name = inputName.value.trim();
+        let password = userPassword.value.trim();
+        let tottext = document.getElementById(`signInChelEblan`)
+        socket.emit(`signIn`, {name:name, password:password})
+        socket.on(`signInOn`, data=>{
+            if(data===`error`){
+                tottext.style.display = `block`
+            }
+            else if(data === `OK`){
+                viborImeni.style.display = `none`;
+                vibor.style.display = `block`
+            }
+            else {
+                tottext.style.display = `block`
+            }
+        })
+
+    })
+
+    vibor.addEventListener(`click`,()=>{
+        const buttonId = event.target.id; // Получаем ID нажатой кнопки
+        if (buttonId) {
+            currentRoom = buttonId;
+            socket.emit('join', currentRoom);
+            chat.style.display = 'block';
+            vibor.style.display = 'none';
+        }
+    })
+
+    but.addEventListener(`click`,()=>{
+        let text = inp.value;
+        if(text && currentRoom){
+        socket.emit(`message`, {room:currentRoom, text: text})
+        inp.value = '';
+        }
+    })
+    socket.on(`message`, ({data, color})=>{
+        const messageElement = document.createElement('div');
+        messageElement.style.backgroundColor = color;
+        messageElement.textContent = data;
+        messagesContainer.appendChild(messageElement);
+    })
+</script>
+</body>
+</html>
