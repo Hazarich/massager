@@ -19,7 +19,7 @@
                     height: 80%;
                     max-height: 500px;
         }
-        .groupOfChats{
+        .chatRooms{
             display: none;
                 justify-content: center;
                 gap: 10px;
@@ -100,7 +100,7 @@
             font-size: 0.9em;
         }
 
-        .groupOfChats button {
+        .chatRooms button {
             padding: 10px 20px;
             background-color: #007BFF;
             color: #fff;
@@ -110,7 +110,7 @@
             cursor: pointer;
         }
 
-        .groupOfChats button:hover {
+        .chatRooms button:hover {
             background-color: #0056b3;
         }
 
@@ -160,7 +160,7 @@
 <body>
 
 <div id="viborBetweenVhodami">
-    <h1>Выбирай</h1>
+    <h1>Обирай</h1>
     <button id="buttonToRegister">Register</button>
     <button id="buttonToSignIn">SignIN</button>
 </div>
@@ -178,29 +178,34 @@
     <label for="registerPassword"></label><input placeholder="Пароль" maxlength="20" type="password" style="text-blink: password" id="registerPassword">
     <button id="registerButtonForChats">Перейти до чатів</button>
     <p id="registerChelEblan" style="color: red; display: none">Ви дебіл? Ви вже зареєстровані</p>
-
 </div>
+
+<div id="chatRooms" style="display: none">
+    <h1 style="text-align: center">Обери чат</h1>
+    <button id="room1">chat 1</button>
+</div>
+
+<div id="createNewChat" style="display: none">
+    <button id="buttonForNewChat">Створити новий особистий чат</button>
+    <label for="createChatInput"></label><input placeholder="Введи назву чату для створення" maxlength="20" id="createChatInput">
+</div>
+
 
 <div id="chatContainer">
     <div id="messages"></div>
     <label for="messageInput"></label><input type="text" id="messageInput" placeholder="Введіть повідомлення">
     <button id="sendButton">Відправити</button>
 </div>
-<div class="groupOfChats">
-    <h1 style="text-align: center">Обери чат</h1>
-    <button id="room1">chat 1</button>
-    <button id="room2">chat 2</button>
-    <button id="room3">chat 3</button>
-</div>
+
 <script>
     const socket = io();
     let currentRoom = ''
-    const vibor = document.querySelector('.groupOfChats');
+    const vibor = document.getElementById('chatRooms');
     const chat = document.getElementById('chatContainer');
     const messagesContainer = document.getElementById('messages');
     const inp = document.getElementById('messageInput');
     const but = document.getElementById('sendButton');
-    const bottonForNAmeandPassword = document.getElementById(`signInButtonForChats`);
+    const signInButton = document.getElementById(`signInButtonForChats`);
     const inputName = document.getElementById(`signInInpOfName`)
     const userPassword = document.getElementById(`signInPassword`)
     const viborImeni = document.getElementById(`signIn`)
@@ -211,6 +216,9 @@
     const buttonToRegister = document.getElementById(`buttonToRegister`)
     const buttonToSignIn = document.getElementById(`buttonToSignIn`)
     const chelDebil = document.getElementById(`signInChelEblan`)
+    const creatNewChat = document.getElementById(`createNewChat`)
+    const createChatInput = document.getElementById(`createChatInput`)
+    const buttonForNewChat = document.getElementById(`buttonForNewChat`)
 
     buttonToRegister.addEventListener('click', () => {
         viborBetweenVhodami.style.display = 'none';
@@ -234,6 +242,7 @@
             if(data === `OK`){
                  register.style.display = `none`;
                  vibor.style.display = `block`
+                creatNewChat.style.display = `block`
             }
             else{
                 registerChelEblan.style.display = `block`;
@@ -242,39 +251,75 @@
 
     })
 
-    bottonForNAmeandPassword.addEventListener(`click`,()=>{
+    signInButton.addEventListener('click', () => {
         let name = inputName.value.trim();
         let password = userPassword.value.trim();
-        socket.emit(`signIn`, {name:name, password:password})
-        socket.on(`signInOn`, data=>{
-            if(data ===`error`){
-                chelDebil.style.display = `block`
-            }
-            else if(data === `OK`){
-                viborImeni.style.display = `none`;
-                vibor.style.display = `block`
-            }
-            else {
-                chelDebil.style.display = `block`
-            }
-        })
 
+        socket.emit('signIn', { name, password });
+
+        socket.on('signInOn', status => {
+            if (status === "OK") {
+                // Получаем список всех комнат
+                socket.on('allChats', (rooms) => {
+                    const chatContainer = document.getElementById('chatRooms');
+                    chatContainer.innerHTML = '';
+
+                    rooms.forEach(room => {
+                        const roomButton = document.createElement('button');
+                        roomButton.textContent = room;
+                        roomButton.id = room;
+                        roomButton.addEventListener('click', () => {
+                            if(roomButton.id) {
+                                socket.emit('join', room);
+                                chat.style.display = 'block';
+                                vibor.style.display = 'none';
+                                creatNewChat.style.display = `none`
+                            }
+                        });
+                        chatContainer.appendChild(roomButton);
+                    });
+
+                });
+
+
+                // Переключение видимости интерфейса
+                viborImeni.style.display = 'none';
+                vibor.style.display = 'block';
+                creatNewChat.style.display = 'block';
+            } else {
+                chelDebil.style.display = 'block';
+            }
+        });
+    });
+
+
+    socket.on('chatCreated', (nameOfChat) => {
+        const newButton = document.createElement('button');
+        newButton.id = nameOfChat;
+        newButton.textContent = nameOfChat;
+        vibor.appendChild(newButton);
+    });
+
+    buttonForNewChat.addEventListener('click', () => {
+        let nameOfChat = createChatInput.value.trim();
+        if (nameOfChat) {
+            socket.emit(`newChat`, nameOfChat)
+        }
     })
-
-    vibor.addEventListener(`click`,()=>{
-        const buttonId = event.target.id; // Получаем ID нажатой кнопки
-        if (buttonId) {
-            currentRoom = buttonId;
-            socket.emit('join', currentRoom);
+    vibor.addEventListener(`click`,(event)=>{
+        let buttonId = event.target.id;
+        if(buttonId) {
+            socket.emit('join', buttonId);
             chat.style.display = 'block';
             vibor.style.display = 'none';
+            creatNewChat.style.display = `none`
         }
     })
 
     but.addEventListener(`click`,()=>{
         let text = inp.value;
-        if(text && currentRoom){
-        socket.emit(`message`, {room:currentRoom, text: text})
+        if(text){
+        socket.emit(`message`, { text: text})
         inp.value = '';
         }
     })

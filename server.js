@@ -33,16 +33,15 @@ async function connectToDatabase() {
 
         io.on(`connection`, (socket)=>{
             console.log(socket.id)
-
             console.log("connected");
             console.log(io.engine.clientsCount)
 
             socket.on('register', async ({ name, password }) => {
-                socket.username = name;
-                socket.password = password;
-                console.log(`Зайшов чел з ніком ${socket.username} і паролем ${socket.password}`);
+                socket.data.username = name;
+                socket.data.password = password;
+                console.log(`Зайшов чел з ніком ${socket.data.username} і паролем ${socket.data.password}`);
 
-                const existingUser = await users.findOne({ login: password });
+                const existingUser = await users.findOne({ name: name });
                 if (existingUser) {
                     socket.emit('registerOn', "error");
                     return;
@@ -50,45 +49,59 @@ async function connectToDatabase() {
                 await users.insertOne({
                     id: socket.id,
                     login: password,
-                    name: socket.username,
+                    name: socket.data.username,
+                    rooms: [],
                 });
 
                 socket.emit('registerOn', "OK");
             });
 
-            socket.on('signIn', async ({name, password}) => {
-                try {
-                    const user = await users.findOne({ name: name, login: password });
-                    if (user) {
-                        socket.emit('signInOn', "OK");
-                    } else {
-                        socket.emit('signInOn', "error");
-                    }
-                } catch (err) {
-                    console.error("помилка при перевірці:", err);
-                    socket.emit('signInOn', "error"); // Ошибка валидации
+            socket.on('signIn', async ({ name, password }) => {
+                const user = await users.findOne({ name, login: password });
+                if (user) {
+                    socket.data.username = name; // Сохраняем имя пользователя
+                    const rooms = user.rooms || []; // Проверяем, есть ли комнаты
+                    socket.emit('signInOn', "OK");
+                    socket.emit('allChats', rooms); // Отправляем список комнат после успешного входа
+                    console.log(`зайшов чел з ніком ${socket.data.username}`);
+                } else {
+                    socket.emit('signInOn', "error");
                 }
             });
 
+
+
+            socket.on('newChat', async (nameOfChat) => {
+
+                await users.updateOne(
+                    { name: socket.data.username },
+                    { $addToSet: { rooms: nameOfChat } }
+                );
+                    socket.emit('chatCreated', nameOfChat);
+
+            })
+
+
             socket.on('join', (room) => {
                 socket.join(room);
-
-                console.log(`користувач ${socket.username} приєднався до кімнати ${room}`);
+                currentRoom = room
+                console.log(`користувач ${socket.data.username} приєднався до кімнати ${room}`);
             });
 
-            socket.on('message', ({ room, text,  }) => {
+            socket.on('message', ({ text }) => {
                 if(!userColors[socket.id]) {
                     userColors[socket.id] = colors[i % colors.length];
                     i++
                 }
                 socket.data.color = userColors[socket.id];
-                console.log(`Повідомлення з ${room} від ${socket.username}: ${text}`);
-                io.in(room).emit('message', {data:`${socket.username}: ${text}`, color: socket.data.color});
+                console.log(socket.id)
+                console.log(`Повідомлення від ${socket.data.username}: ${text}`);
+                io.in(currentRoom).emit('message', {data:`${socket.data.username}: ${text}`, color: socket.data.color});
             });
 
 
             socket.on('disconnect', () => {
-                console.log(`${socket.username} відключився`);
+                console.log(`${socket.data.username} відключився`);
                 delete userColors[socket.id];
             });
         })
