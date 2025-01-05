@@ -170,6 +170,7 @@
     <label for="signInPassword"></label><input placeholder="Пароль" maxlength="20" type="password" style="text-blink: password" id="signInPassword">
     <button id="signInButtonForChats">Перейти до чатів</button>
     <p id="signInChelEblan" style="color: red; display: none">Ви дебіл, впишіть логін та пароль так, як ви писали його при реєстрації...</p>
+    <button id="buttonBackSignIN">Повернутися назад</button>
 </div>
 
 <div id="register">
@@ -178,16 +179,19 @@
     <label for="registerPassword"></label><input placeholder="Пароль" maxlength="20" type="password" style="text-blink: password" id="registerPassword">
     <button id="registerButtonForChats">Перейти до чатів</button>
     <p id="registerChelEblan" style="color: red; display: none">Ви дебіл? Ви вже зареєстровані</p>
+    <button id="buttonBackRegister">Повернутися назад</button>
 </div>
 
 <div id="chatRooms" style="display: none">
-    <h1 style="text-align: center">Обери чат</h1>
+    <h1 style="text-align: center">Обери чат, або увійди в інший чат</h1>
     <button id="room1">chat 1</button>
 </div>
 
 <div id="createNewChat" style="display: none">
     <button id="buttonForNewChat">Створити новий особистий чат</button>
     <label for="createChatInput"></label><input placeholder="Введи назву чату для створення" maxlength="20" id="createChatInput">
+    <label for="findAnotherChatInput"></label><input placeholder="Введи чату, в яийй хочеш увійти" maxlength="20" id="findAnotherChatInput">
+    <button id="findAnotherChatButton">Знайти інший чат</button>
 </div>
 
 
@@ -195,11 +199,13 @@
     <div id="messages"></div>
     <label for="messageInput"></label><input type="text" id="messageInput" placeholder="Введіть повідомлення">
     <button id="sendButton">Відправити</button>
+    <button id="buttonBackMessages">Повернутися назад</button>
 </div>
 
 <script>
     const socket = io();
     let currentRoom = ''
+
     const vibor = document.getElementById('chatRooms');
     const chat = document.getElementById('chatContainer');
     const messagesContainer = document.getElementById('messages');
@@ -208,7 +214,7 @@
     const signInButton = document.getElementById(`signInButtonForChats`);
     const inputName = document.getElementById(`signInInpOfName`)
     const userPassword = document.getElementById(`signInPassword`)
-    const viborImeni = document.getElementById(`signIn`)
+    const signIn = document.getElementById(`signIn`)
     const registerButtonForChats = document.getElementById(`registerButtonForChats`)
     const registerChelEblan = document.getElementById(`registerChelEblan`)
     const register = document.getElementById(`register`)
@@ -219,6 +225,25 @@
     const creatNewChat = document.getElementById(`createNewChat`)
     const createChatInput = document.getElementById(`createChatInput`)
     const buttonForNewChat = document.getElementById(`buttonForNewChat`)
+    const findAnotherChatButton = document.getElementById(`findAnotherChatButton`)
+    const buttonBackMessage = document.getElementById('buttonBackMessages');
+    const buttonBackRegister = document.getElementById('buttonBackRegister');
+    const buttonBackSignIn = document.getElementById('buttonBackSignIN');
+
+    buttonBackSignIn.addEventListener('click', () => {
+        signIn.style.display = 'none'
+        viborBetweenVhodami.style.display = 'block'
+    })
+    buttonBackRegister.addEventListener('click', () => {
+        register.style.display = 'none'
+        viborBetweenVhodami.style.display = 'block'
+    })
+
+    buttonBackMessage.addEventListener('click', () => {
+        chat.style.display = 'none'
+        vibor.style.display = 'block'
+        creatNewChat.style.display = 'block'
+    })
 
     buttonToRegister.addEventListener('click', () => {
         viborBetweenVhodami.style.display = 'none';
@@ -226,7 +251,7 @@
     })
     buttonToSignIn.addEventListener('click', () => {
         viborBetweenVhodami.style.display = 'none';
-        viborImeni.style.display = 'block';
+        signIn.style.display = 'block';
     })
 
     registerButtonForChats.addEventListener('click', () => {
@@ -278,12 +303,8 @@
                         });
                         chatContainer.appendChild(roomButton);
                     });
-
                 });
-
-
-                // Переключение видимости интерфейса
-                viborImeni.style.display = 'none';
+                signIn.style.display = 'none';
                 vibor.style.display = 'block';
                 creatNewChat.style.display = 'block';
             } else {
@@ -293,12 +314,32 @@
     });
 
 
+    findAnotherChatButton.addEventListener('click', () => {
+        const findAnotherChat = document.getElementById(`findAnotherChatInput`).value.trim();
+        if(findAnotherChat){
+            socket.emit(`find`, findAnotherChat)
+        }
+        else{alert("Введіть назву чату")}
+    })
+    socket.on(`found`, data=>{
+        if(data === "OK"){
+            chat.style.display = 'block';
+            vibor.style.display = 'none';
+            creatNewChat.style.display = `none`
+        }
+        else if(data === "error"){
+            alert("Не знайшли такого чату")
+        }
+    })
+
     socket.on('chatCreated', (nameOfChat) => {
         const newButton = document.createElement('button');
         newButton.id = nameOfChat;
         newButton.textContent = nameOfChat;
         vibor.appendChild(newButton);
     });
+
+
 
     buttonForNewChat.addEventListener('click', () => {
         let nameOfChat = createChatInput.value.trim();
@@ -317,7 +358,7 @@
     })
 
     but.addEventListener(`click`,()=>{
-        let text = inp.value;
+        let text = inp.value.trim();
         if(text){
         socket.emit(`message`, { text: text})
         inp.value = '';
@@ -329,6 +370,7 @@
         messageElement.textContent = data;
         messagesContainer.appendChild(messageElement);
     })
+
 </script>
 </body>
 </html>

@@ -80,7 +80,17 @@ async function connectToDatabase() {
                     socket.emit('chatCreated', nameOfChat);
 
             })
+            socket.on(`find`, findAnotherChat=>{
+                const match =  users.findOne( {rooms:findAnotherChat});
+                currentRoom = findAnotherChat
+                if(match) {
+                    socket.join(findAnotherChat);
+                    socket.emit('found', "OK");
+                } else {
+                    socket.emit('found', "error");
+                }
 
+            })
 
             socket.on('join', (room) => {
                 socket.join(room);
