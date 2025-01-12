@@ -124,7 +124,7 @@ async function connectToDatabase() {
             })
 
             socket.on('join', async (room) => {
-                const collection = db.collection("rooms"); // Получаем коллекцию "rooms"
+                const collection = db.collection("rooms");
 
                 // Получаем количество сообщений в комнате
                 const count = await collection.aggregate([
@@ -136,17 +136,14 @@ async function connectToDatabase() {
 
                 // Получаем сами сообщения
                 const result = await collection.findOne(
-                    { room: room }, // Условие поиска
+                    { room: room },
                     { projection: { _id: 0, messages: 1 } } // Берем только поле messages
                 );
 
                 console.log(result);
-
-                // Проверяем, что результаты не пустые
                 if (result && count.length > 0) {
                     const messageCount = count[0].messageCount;
-
-                    // Отправляем сообщения только если они существуют
+                    
                     for (let i = 0; i < messageCount; i++) {
                         socket.emit('message', result.messages[i]);
                     }
@@ -180,7 +177,6 @@ async function connectToDatabase() {
                 };
 
                 try {
-                    // Обновляем документ комнаты, добавляя новое сообщение в массив
                     const collection = db.collection("rooms");
                     await collection.updateOne(
                         { room: socket.data.room },
@@ -188,7 +184,6 @@ async function connectToDatabase() {
                         { upsert: true } // Создаем документ, если он не существует
                     );
 
-                    // Отправляем сообщение всем в комнате
                     io.in(currentRoom).emit('message', message);
                 } catch (error) {
                     console.error("Ошибка сохранения сообщения:", error);
@@ -208,9 +203,6 @@ async function connectToDatabase() {
         })
 
 
-
-
-        // Здесь можно начать работать с коллекциями и документами
     } catch (err) {
         console.error("помилка підключення:", err);
     }
