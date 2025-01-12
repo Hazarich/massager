@@ -5,27 +5,46 @@
     <title>Title</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        #chatContainer{
+        #chatContainer {
             display: none;
-                background-color: #fff;
-                border-radius: 8px;
-                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-                padding: 20px;
-                width: 90%;
-                max-width: 400px;
-                margin: auto;
-                text-align: center;
-                    flex-direction: column;
-                    height: 80%;
-                    max-height: 500px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            width: 90%;
+            max-width: 400px;
+            margin: auto;
+            text-align: center;
+            flex-direction: column;
+            height: 80%;
+            max-height: 500px;
         }
-        .chatRooms{
+
+        .chatRooms {
             display: none;
-                justify-content: center;
-                gap: 10px;
-                flex-wrap: wrap;
+            justify-content: flex-start;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
         }
-        #register{
+
+        .chatRooms button {
+            width: 80%;
+            padding: 10px;
+            background-color: #007BFF;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.9em;
+            cursor: pointer;
+        }
+
+        .chatRooms button:hover {
+            background-color: #0056b3;
+        }
+
+        #register {
             display: none;
             background-color: #fff;
             border-radius: 8px;
@@ -36,7 +55,8 @@
             margin: auto;
             text-align: center;
         }
-        #signIn{
+
+        #signIn {
             display: none;
             background-color: #fff;
             border-radius: 8px;
@@ -47,19 +67,18 @@
             margin: auto;
             text-align: center;
         }
-         body {
-             font-family: Arial, sans-serif;
-             margin: 0;
-             padding: 0;
-             background-color: #f4f4f4;
-             color: #333;
-             display: flex;
-             justify-content: center;
-             align-items: center;
-             height: 100vh;
-         }
 
-
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
 
         #signIn h1 {
             font-size: 1.5em;
@@ -95,26 +114,13 @@
             background-color: #45a049;
         }
 
-        #signInChelEblan {
-            margin-top: 10px;
-            font-size: 0.9em;
+        .back-button {
+            background-color: #FF6F61;
         }
 
-        .chatRooms button {
-            padding: 10px 20px;
-            background-color: #007BFF;
-            color: #fff;
-            border: none;
-            border-radius: 4px;
-            font-size: 0.9em;
-            cursor: pointer;
+        .back-button:hover {
+            background-color: #e55a4c;
         }
-
-        .chatRooms button:hover {
-            background-color: #0056b3;
-        }
-
-
 
         #messages {
             flex: 1;
@@ -135,13 +141,15 @@
             text-align: left;
         }
 
-/*        #messages div:nth-child(odd) {
-            background-color: #d4edda;
-        }*/
+        #createNewChat {
+            display: none;
+            margin-top: 10px;
+            width: 100%;
+            text-align: center;
+        }
 
-        #messageInput {
-            flex: 0;
-            width: calc(100% - 20px);
+        #createNewChat input {
+            width: 90%;
             margin-bottom: 10px;
         }
 
@@ -160,46 +168,45 @@
 <body>
 
 <div id="viborBetweenVhodami">
-    <h1>Обирай</h1>
+    <h1 style="text-align: center">Обирай</h1>
     <button id="buttonToRegister">Register</button>
     <button id="buttonToSignIn">SignIN</button>
 </div>
 <div id="signIn">
-    <h1 style="text-align: center" >Привіт введи свій логін та пароль</h1>
+    <h1 style="text-align: center">Привіт введи свій логін та пароль</h1>
     <label for="signInInpOfName"></label><input placeholder="Ім'я" maxlength="10" id="signInInpOfName">
     <label for="signInPassword"></label><input placeholder="Пароль" maxlength="20" type="password" style="text-blink: password" id="signInPassword">
     <button id="signInButtonForChats">Перейти до чатів</button>
     <p id="signInChelEblan" style="color: red; display: none">Ви дебіл, впишіть логін та пароль так, як ви писали його при реєстрації...</p>
-    <button id="buttonBackSignIN">Повернутися назад</button>
+    <button id="buttonBackSignIN" class="back-button">Повернутися назад</button>
 </div>
 
 <div id="register">
-    <h1 style="text-align: center" >Привіт, введіть своє ім'я</h1>
+    <h1 style="text-align: center">Привіт, введіть своє ім'я</h1>
     <label for="registerInpOfName"></label><input placeholder="Ім'я" maxlength="10" id="registerInpOfName">
     <label for="registerPassword"></label><input placeholder="Пароль" maxlength="20" type="password" style="text-blink: password" id="registerPassword">
     <button id="registerButtonForChats">Перейти до чатів</button>
     <p id="registerChelEblan" style="color: red; display: none">Ви дебіл? Ви вже зареєстровані</p>
-    <button id="buttonBackRegister">Повернутися назад</button>
+    <button id="buttonBackRegister" class="back-button">Повернутися назад</button>
 </div>
 
 <div id="chatRooms" style="display: none">
-    <h1 style="text-align: center">Обери чат, або увійди в інший чат</h1>
-    <button id="room1">chat 1</button>
+    <h1 style="text-align: center">Чати</h1>
+    <div class="chatRooms"></div>
 </div>
 
 <div id="createNewChat" style="display: none">
     <button id="buttonForNewChat">Створити новий особистий чат</button>
     <label for="createChatInput"></label><input placeholder="Введи назву чату для створення" maxlength="20" id="createChatInput">
-    <label for="findAnotherChatInput"></label><input placeholder="Введи чату, в яийй хочеш увійти" maxlength="20" id="findAnotherChatInput">
+    <label for="findAnotherChatInput"></label><input placeholder="Введи назву чату, в який хочеш увійти" maxlength="20" id="findAnotherChatInput">
     <button id="findAnotherChatButton">Знайти інший чат</button>
 </div>
-
 
 <div id="chatContainer">
     <div id="messages"></div>
     <label for="messageInput"></label><input type="text" id="messageInput" placeholder="Введіть повідомлення">
     <button id="sendButton">Відправити</button>
-    <button id="buttonBackMessages">Повернутися назад</button>
+    <button id="buttonBackMessages" class="back-button">Повернутися назад</button>
 </div>
 
 <script>
@@ -295,6 +302,7 @@
                         roomButton.id = room;
                         roomButton.addEventListener('click', () => {
                             if(roomButton.id) {
+                                currentRoom = room
                                 socket.emit('join', room);
                                 chat.style.display = 'block';
                                 vibor.style.display = 'none';
@@ -317,6 +325,7 @@
     findAnotherChatButton.addEventListener('click', () => {
         const findAnotherChat = document.getElementById(`findAnotherChatInput`).value.trim();
         if(findAnotherChat){
+            currentRoom = findAnotherChat
             socket.emit(`find`, findAnotherChat)
         }
         else{alert("Введіть назву чату")}
@@ -364,12 +373,16 @@
         inp.value = '';
         }
     })
-    socket.on(`message`, ({data, color})=>{
+    socket.on('message', (data) => {
+
+        // Создаем элемент сообщения
         const messageElement = document.createElement('div');
-        messageElement.style.backgroundColor = color;
-        messageElement.textContent = data;
+        messageElement.style.backgroundColor = data.color; // Устанавливаем цвет фона
+        messageElement.textContent = data.messageFromUser; // Устанавливаем текст сообщения
         messagesContainer.appendChild(messageElement);
-    })
+
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    });
 
 </script>
 </body>

@@ -77,37 +77,124 @@ async function connectToDatabase() {
                     { name: socket.data.username },
                     { $addToSet: { rooms: nameOfChat } }
                 );
+                socket.data.room = nameOfChat;
                     socket.emit('chatCreated', nameOfChat);
 
             })
-            socket.on(`find`, findAnotherChat=>{
+            socket.on(`find`, async findAnotherChat=>{
+
+                socket.data.room = findAnotherChat
                 const match =  users.findOne( {rooms:findAnotherChat});
-                currentRoom = findAnotherChat
+
                 if(match) {
+
+                    await users.updateOne(
+                        { name: socket.data.username },
+                        { $addToSet: { rooms: socket.data.room } }
+                    );
+                    socket.emit('chatCreated', socket.data.room);
+
                     socket.join(findAnotherChat);
                     socket.emit('found', "OK");
+                    const collection = db.collection("rooms"); // Получаем коллекцию "rooms"
+
+                    const count = await collection.aggregate([
+                        { $match: { room: socket.data.room } }, // Ищем документ с нужной комнатой
+                        { $project: { _id: 0, messageCount: { $size: "$messages" } } } // Считаем количество сообщений
+                    ]).toArray();
+
+                    const result = await collection.findOne(
+                        { room: socket.data.room }, // Условие поиска
+                        { projection: { _id: 0, messages: 1 } } // Берем только поле messages
+                    );
+                    if (result && count.length > 0) {
+                    const messageCount = count[0].messageCount;
+                    console.log(`користувач ${socket.data.username} приєднався до кімнати ${socket.data.room}`);
+                    for(let i = 0; i < messageCount; i++) {
+                        socket.emit('message', result.messages[i]);
+                    }}
+                    else {
+                        console.log("Комната не существует или нет сообщений.");
+                    }
+
                 } else {
                     socket.emit('found', "error");
                 }
 
             })
 
-            socket.on('join', (room) => {
+            socket.on('join', async (room) => {
+                const collection = db.collection("rooms"); // Получаем коллекцию "rooms"
+
+                // Получаем количество сообщений в комнате
+                const count = await collection.aggregate([
+                    { $match: { room: room } }, // Ищем документ с нужной комнатой
+                    { $project: { _id: 0, messageCount: { $size: "$messages" } } } // Считаем количество сообщений
+                ]).toArray();
+
+                console.log(count);
+
+                // Получаем сами сообщения
+                const result = await collection.findOne(
+                    { room: room }, // Условие поиска
+                    { projection: { _id: 0, messages: 1 } } // Берем только поле messages
+                );
+
+                console.log(result);
+
+                // Проверяем, что результаты не пустые
+                if (result && count.length > 0) {
+                    const messageCount = count[0].messageCount;
+
+                    // Отправляем сообщения только если они существуют
+                    for (let i = 0; i < messageCount; i++) {
+                        socket.emit('message', result.messages[i]);
+                    }
+                } else {
+                    console.log("Комната не существует или нет сообщений.");
+                }
                 socket.join(room);
-                currentRoom = room
+                socket.data.room = room;
                 console.log(`користувач ${socket.data.username} приєднався до кімнати ${room}`);
             });
 
-            socket.on('message', ({ text }) => {
-                if(!userColors[socket.id]) {
+
+            socket.on('message', async ({ text }) => {
+                if (!userColors[socket.id]) {
                     userColors[socket.id] = colors[i % colors.length];
-                    i++
+                    i++;
                 }
+
                 socket.data.color = userColors[socket.id];
-                console.log(socket.id)
-                console.log(`Повідомлення від ${socket.data.username}: ${text}`);
-                io.in(currentRoom).emit('message', {data:`${socket.data.username}: ${text}`, color: socket.data.color});
+                const currentRoom = socket.data.room;
+                if (!currentRoom) {
+                    console.error("Комната не выбрана!");
+                    return;
+                }
+
+                const message = {
+                    username: socket.data.username,
+                    messageFromUser: text,
+                    timestamp: new Date(),
+                    color: socket.data.color,
+                };
+
+                try {
+                    // Обновляем документ комнаты, добавляя новое сообщение в массив
+                    const collection = db.collection("rooms");
+                    await collection.updateOne(
+                        { room: socket.data.room },
+                        { $push: { messages: message } },
+                        { upsert: true } // Создаем документ, если он не существует
+                    );
+
+                    // Отправляем сообщение всем в комнате
+                    io.in(currentRoom).emit('message', message);
+                } catch (error) {
+                    console.error("Ошибка сохранения сообщения:", error);
+                }
             });
+
 
 
             socket.on('disconnect', () => {
